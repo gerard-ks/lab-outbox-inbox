@@ -1,0 +1,28 @@
+spring:
+  config:
+    import:
+      - classpath:/order-module.yml
+      - classpath:/inventory-module.yml
+      - classpath:/platform-module.yml
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lab_db
+    username: lab_user
+    password: lab_password
+    driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    create-schemas: true
+    schemas: infra_schema, order_schema, inventory_schema
+    locations: classpath:db/migration/order, classpath:db/migration/inventory, classpath:db/migration/platform
+
+logging:
+  level:
+    org.flywaydb: DEBUG
+
+
+chaos:
+  monkey:
+    loop-orders: false    # Si true : Crée une commande en boucle à l'infini (Pour le Test 1)

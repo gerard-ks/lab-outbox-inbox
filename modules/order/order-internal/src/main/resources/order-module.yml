@@ -1,0 +1,4 @@
+
+order:
+  outbox:
+    delay: 2000 # 2 seconds

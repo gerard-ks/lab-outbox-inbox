@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: lab_user
+      POSTGRES_PASSWORD: lab_password
+      POSTGRES_DB: lab_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - lab_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@lab.com
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+    ports:
+      - "8081:80"
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json:ro
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+
+  nats:
+    image: nats:2.14-alpine
+    command: ["-js", "-sd", "/data", "-m", "8222"] # Indispensable : active la persistance JetStream !
+    ports:
+      - "4222:4222" # Port d'application
+      - "8222:8222" # Port de monitoring Web
+    volumes:
+      - nats_data:/data
+
+
+volumes:
+  lab_data:
+  nats_data:
+  pgadmin_data:

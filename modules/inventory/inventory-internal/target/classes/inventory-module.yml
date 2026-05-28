@@ -1,0 +1,6 @@
+
+inventory:
+  inbox:
+    purge-delay: 86400000 # 24h en ms
+  consumer:
+    nak-delay: 2s # En prod, on mettra 30s dans le fichier du serveur
