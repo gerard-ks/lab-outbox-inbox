@@ -15,4 +15,4 @@ app:
       subjects:
         - "events.>"
     chaos:
-        simulate-doublon: true # Si true : Empêche l'Outbox de passer à SENT (Pour le Test 2)
+        simulate-doublon: false # Si true : Empêche l'Outbox de passer à SENT (Pour le Test 2)

@@ -5,5 +5,6 @@ import java.util.UUID;
 public record OutboxMessage(
         UUID id,
         String eventType,
-        String payload
+        String payload,
+        int retryCount
 ) {}

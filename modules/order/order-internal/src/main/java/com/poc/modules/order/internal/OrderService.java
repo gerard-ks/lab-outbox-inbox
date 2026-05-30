@@ -53,7 +53,7 @@ public class OrderService {
             jdbcClient.sql(
                             "INSERT INTO order_schema.outbox " +
                                     "(id, event_type, aggregate_type, aggregate_id, version, correlation_id, causation_id, payload, status) " +
-                                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, 'PENDING')"
+                                    "VALUES (?, ?, ?, ?, ?, ?, ?::uuid, ?::jsonb, 'PENDING')"
                     )
                     .param(event.eventId())
                     .param(event.eventType())

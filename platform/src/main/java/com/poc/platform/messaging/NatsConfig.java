@@ -1,46 +1,36 @@
 package com.poc.platform.messaging;
 
 import io.nats.client.Connection;
+import io.nats.client.JetStreamManagement;
 import io.nats.client.Nats;
 import io.nats.client.Options;
 import io.nats.client.api.StreamConfiguration;
+import io.nats.client.api.StreamInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-
 @Configuration
 public class NatsConfig {
     private static final Logger log = LoggerFactory.getLogger(NatsConfig.class);
-
     private final MessagingProperties properties;
 
     public NatsConfig(MessagingProperties properties) {
         this.properties = properties;
     }
 
-
     @Bean(destroyMethod = "close")
     public Connection natsConnection() throws Exception {
-
-
         var natsProps = properties.nats();
 
         Options options = new Options.Builder()
                 .server(natsProps.server())
-                .connectionTimeout(natsProps.connectionTimeout()) // Temps max pour établir la connexion initiale
-                .reconnectWait(natsProps.reconnectWait())     // Temps d'attente entre deux tentatives de reconnexion
-                .maxReconnects(-1)                        // Tentatives de reconnexion infinies si NATS tombe
-
-                // Timeout d'écriture réseau pour éviter de figer le socket TCP
+                .connectionTimeout(natsProps.connectionTimeout())
+                .reconnectWait(natsProps.reconnectWait())
+                .maxReconnects(-1) // Reconnexions infinies
                 .socketWriteTimeout(natsProps.socketWriteTimeout())
-
-                // Sécurité Outbox : on sature immédiatement le buffer de reconnexion (1 message max)
-                // pour lever une erreur applicative rapide si NATS est inaccessible.
-                .reconnectBufferSize(1)
-
-                // Gestionnaires d'événements pour le monitoring de l'infrastructure
+                .reconnectBufferSize(1) // Idéal pour l'Outbox (Erreur rapide si déconnexion)
                 .connectionListener((conn, event) -> {
                     log.warn("[NATS] Événement de connexion : {}", event);
                 })
@@ -57,21 +47,49 @@ public class NatsConfig {
                 .build();
 
         log.info("[NATS] Tentative de connexion au serveur : {}", natsProps.server());
-
         Connection nc = Nats.connect(options);
 
+        // Configuration idempotente et sécurisée du Stream JetStream
         try {
-            var jsm = nc.jetStreamManagement();
+            JetStreamManagement jsm = nc.jetStreamManagement();
+            String streamName = properties.stream().name();
+
             StreamConfiguration streamConfig = StreamConfiguration.builder()
-                    .name(properties.stream().name()) // Nom du Stream
-                    .subjects(properties.stream().subjects())    // Tous les sujets commençant par "events." iront dans ce Stream
+                    .name(streamName)
+                    .subjects(properties.stream().subjects())
                     .build();
-            jsm.addStream(streamConfig);
-            log.info("[NATS] Stream 'MODULAR_MONOLITH_EVENTS' configuré avec succès.");
+
+            boolean streamExists = false;
+            try {
+                // On vérifie d'abord si le stream existe déjà sur le serveur NATS
+                StreamInfo info = jsm.getStreamInfo(streamName);
+                if (info != null) {
+                    streamExists = true;
+                    log.info("[NATS] Le Stream '{}' existe déjà. Passage en mode mise à jour si nécessaire.", streamName);
+                }
+            } catch (Exception ex) {
+                // L'exception signifie généralement que le stream n'existe pas encore
+                streamExists = false;
+            }
+
+            if (!streamExists) {
+                jsm.addStream(streamConfig);
+                log.info("[NATS] Stream '{}' créé avec succès.", streamName);
+            } else {
+                // Si le stream existe, on fait un update (si des sujets ont été ajoutés par exemple)
+                jsm.updateStream(streamConfig);
+                log.info("[NATS] Stream '{}' mis à jour de façon idempotente.", streamName);
+            }
+
+        } catch (IllegalStateException e) {
+            // Capturé si le serveur est inaccessible au démarrage (la connexion est en mode reconnect asynchrone)
+            log.error("[NATS] Impossible d'initialiser JetStream au démarrage : le serveur est injoignable. " +
+                    "La topologie du Stream sera résolue lors de la première reconnexion réseau active.", e);
         } catch (Exception e) {
-            // Si le stream existe déjà, NATS peut lever une exception, on l'ignore silencieusement.
+            // Erreur de configuration (ex: conflit de paramètres immuables sur le stream)
+            log.error("[NATS] Échec de la configuration topologique du Stream '{}'", properties.stream().name(), e);
         }
 
-        return nc; // ON RETOURNE LA CONNEXION
+        return nc;
     }
 }
