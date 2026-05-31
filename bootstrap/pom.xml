@@ -25,22 +25,12 @@
 
         <dependency>
             <groupId>com.poc.modules</groupId>
-            <artifactId>order-contract</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.poc.modules</groupId>
             <artifactId>inventory-internal</artifactId>
         </dependency>
 
         <dependency>
             <groupId>com.poc.modules</groupId>
             <artifactId>order-internal</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.poc.modules</groupId>
-            <artifactId>inventory-contract</artifactId>
         </dependency>
 
         <dependency>

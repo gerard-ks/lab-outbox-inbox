@@ -11,7 +11,4 @@
 
     <artifactId>shared</artifactId>
     <packaging>jar</packaging>
-
-    <dependencies>
-    </dependencies>
 </project>
