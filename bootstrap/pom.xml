@@ -26,25 +26,21 @@
         <dependency>
             <groupId>com.poc.modules</groupId>
             <artifactId>order-contract</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.poc.modules</groupId>
             <artifactId>inventory-internal</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.poc.modules</groupId>
             <artifactId>order-internal</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.poc.modules</groupId>
             <artifactId>inventory-contract</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
